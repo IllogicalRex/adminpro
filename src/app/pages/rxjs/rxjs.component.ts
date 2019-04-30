@@ -1,20 +1,21 @@
-import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
-import { retry } from 'rxjs/operators';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Observable, Subscribable, Subscriber, Subscription } from 'rxjs';
+import { retry, map, filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-rxjs',
   templateUrl: './rxjs.component.html',
   styles: []
 })
-export class RxjsComponent implements OnInit {
+export class RxjsComponent implements OnInit, OnDestroy {
+
+
+
+  subscripcion: Subscription;
 
   constructor() {
 
-    this.regresaObservable().pipe(
-      retry(2)
-    )
-
+    this.subscripcion = this.regresaObservable()
     .subscribe(
       numero => console.log('subs', numero),
       error => console.error('error en el obs', error),
@@ -26,29 +27,48 @@ export class RxjsComponent implements OnInit {
   ngOnInit() {
   }
 
-  regresaObservable() {
-    const obs = new Observable( observer => {
+  ngOnDestroy() {
+    console.log('La pagina se va a cerrar');
+    this.subscripcion.unsubscribe();
+  }
+
+  regresaObservable(): Observable<any> {
+    return new Observable( ( observer: Subscriber<any> ) => {
 
       let contador = 0;
 
       const intervalo = setInterval ( () => {
-        contador += 1;
+        contador ++;
 
-        observer.next(contador);
+        const salida = {
+          valor: contador
+        };
 
-        if (contador === 3) {
+        observer.next(salida);
+
+       /*  if (contador === 3) {
           clearInterval( intervalo);
           observer.complete();
-        }
+        } */
 
-        if ( contador === 2 ) {
+        /* if ( contador === 2 ) {
          // clearInterval( intervalo);
           observer.error('Auxilio!');
-        }
+        } */
       }, 1000);
 
-    });
-    return obs;
+    }).pipe(
+      map( resp => resp.valor),
+      filter( (valor , index) => {
+        if (valor % 2 === 1 ) {
+          // impar
+          return true;
+        } else {
+          // par
+          return false;
+        }
+      })
+    );
   }
 
 }
